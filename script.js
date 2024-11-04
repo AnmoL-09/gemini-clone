@@ -1,5 +1,6 @@
 const typingForm = document.querySelector(".typing-form");
 const chatList = document.querySelector(".chat-list");
+const toggleThemeButton = document.querySelector("#toggle-theme-button");
 
 let userMessage = null;
 
@@ -14,7 +15,23 @@ const createMessageElement= (content, ...classes) => {
     div.innerHTML = content;
     return div;
 }
+ 
 
+// show typing effect
+const showTypingEffect = (text, textElement) => {
+    const words = text.split(' ');
+    let currentWordIndex = 0;
+
+    const typingInterval = setInterval(() => {
+        // Append each word to the text element with a sapce
+        textElement.innerText += (currentWordIndex ===0 ? '' : ' ') + words[currentWordIndex++];
+
+        // if all words are displayed
+        if(currentWordIndex === words.length) {
+            clearInterval(typingInterval);
+        }
+    }, 75)
+}
 // Fetch response from the API on user message
 const generateAPIResponse = async (incomingMessageDiv) => {
 
@@ -34,8 +51,9 @@ const generateAPIResponse = async (incomingMessageDiv) => {
 
         const data = await response.json();
 
+        // Get the API response text
         const apiResponse = data?.candidates[0].content.parts[0].text;
-        textElement.innerText = apiResponse;
+        showTypingEffect(apiResponse, textElement);
     }catch(error){
         console.log(error);
     }finally{
@@ -54,12 +72,20 @@ const showLoadingAnimation = () => {
                     <div class="loading-bar"></div>
                 </div>
             </div>
-            <span class="icon material-symbols-rounded">content_copy</span>`;
+            <span onclick="copyMessage(this)" class="icon material-symbols-rounded">content_copy</span>`;
 
 const incomingMessageDiv = createMessageElement(html, "incoming", "loading");
 chatList.append(incomingMessageDiv);
 
 generateAPIResponse(incomingMessageDiv);
+}
+
+//Copy message to text clipboard
+const copyMessage = (copyIcon) => {
+    const messageText = copyIcon.parentElement.querySelector(".text");
+    navigator.clipboard.writeText(messageText);
+    copyIcon.innerText = "done"; //show tick icon
+    setTimeout(() => copyIcon.innerText = "content_copy",1000 ) //revert icon after 1 second
 }
 
 // Handle sending outgoing messages
@@ -79,6 +105,13 @@ const handleOutgoingChat = () => {
    typingForm.reset(); //Clear input field
    setTimeout(showLoadingAnimation, 500); // Show loading animation after a delay
 }
+
+// toggle between light and dark mode
+toggleThemeButton.addEventListener("click", () => {
+    const isLightMode = document.body.classList.toggle("light_mode");
+    localStorage.setItem("themeColor", )
+    toggleThemeButton.innerText = isLightMode ? "dark_mode" : "light_mode";
+})
 
 
 // Prevent default from submission and handle outgoing chat
